@@ -21,14 +21,14 @@ spec:
     spec:
       containers:
         - name: app
-          image: deployment-platform-demo:1.0.0-node
+          image: deployment-platform-demo:1.1.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
           env:
             - name: APP_VERSION
-              value: "1.0.0"
+              value: "1.1.0"
             - name: ENVIRONMENT
               value: "local-kubernetes"
           readinessProbe:

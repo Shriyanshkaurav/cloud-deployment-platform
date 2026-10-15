@@ -15,6 +15,14 @@ app.get('/', (req, res) => {
   });
 });
 
+app.get('/version', (req, res) => {
+  res.json({
+    application: APP_NAME,
+    version: APP_VERSION,
+    environment: ENVIRONMENT
+  });
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy' });
 });

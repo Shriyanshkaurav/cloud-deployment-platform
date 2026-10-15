@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { createServer } = require('node:http');
 
 process.env.APP_NAME = 'deployment-platform-demo';
-process.env.APP_VERSION = '1.0.0';
+process.env.APP_VERSION = '1.1.0';
 process.env.ENVIRONMENT = 'test';
 
 const app = require('../src/server');
@@ -36,7 +36,7 @@ test('GET / returns application information', async () => {
 
   assert.equal(response.status, 200);
   assert.equal(data.application, 'deployment-platform-demo');
-  assert.equal(data.version, '1.0.0');
+  assert.equal(data.version, '1.1.0');
   assert.equal(data.environment, 'test');
 });
 
@@ -52,4 +52,16 @@ test('GET /ready returns ready', async () => {
 
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { status: 'ready' });
+});
+
+test('GET /version returns application version information', async () => {
+  const response = await fetch(`${baseUrl}/version`);
+  const data = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(data, {
+    application: 'deployment-platform-demo',
+    version: '1.1.0',
+    environment: 'test'
+  });
 });
