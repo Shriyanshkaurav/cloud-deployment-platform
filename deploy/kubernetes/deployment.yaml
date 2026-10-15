@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: deployment-platform-demo:1.0.0
+          image: deployment-platform-demo:1.0.0-node
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

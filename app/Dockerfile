@@ -1,19 +1,17 @@
-FROM python:3.12-slim
+FROM node:22-alpine
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
+ENV NODE_ENV=production \
     PORT=8080
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
-COPY app.py .
+COPY --chown=node:node src/ ./src/
 
-RUN useradd --create-home --uid 10001 appuser
-USER 10001
+USER node
 
 EXPOSE 8080
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "2", "--timeout", "30", "app:app"]
+CMD ["node", "src/server.js"]
