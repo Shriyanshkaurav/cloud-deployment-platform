@@ -1,0 +1,89 @@
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  imageRepository: deployment-platform-demo
+  dockerRegistryServiceConnection: 'REPLACE_WITH_ACR_SERVICE_CONNECTION'
+  containerRegistry: 'REPLACE_WITH_REGISTRY.azurecr.io'
+  imageTag: '$(Build.BuildId)'
+
+stages:
+  - stage: Test
+    displayName: Test application
+    jobs:
+      - job: UnitTests
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '22.x'
+            displayName: Use Node.js 22
+
+          - script: npm ci
+            workingDirectory: app
+            displayName: Install dependencies
+
+          - script: npm test
+            workingDirectory: app
+            displayName: Run application tests
+
+  - stage: BuildScanPush
+    displayName: Build, scan and publish image
+    dependsOn: Test
+    condition: succeeded()
+    jobs:
+      - job: Container
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+
+          - task: Docker@2
+            displayName: Log in to container registry
+            inputs:
+              command: login
+              containerRegistry: $(dockerRegistryServiceConnection)
+
+          - script: |
+              set -euo pipefail
+              IMAGE="$(containerRegistry)/$(imageRepository):$(imageTag)"
+              docker build -t "$IMAGE" ./app
+
+              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+                | sh -s -- -b /usr/local/bin
+
+              trivy image --exit-code 1 --severity HIGH,CRITICAL \
+                --ignore-unfixed "$IMAGE"
+
+              docker push "$IMAGE"
+
+              DIGEST="$(docker buildx imagetools inspect "$IMAGE" \
+                | awk '$1 == "Digest:" {print $2; exit}')"
+
+              if ! [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+                echo "ERROR: Could not obtain a valid registry image digest."
+                exit 1
+              fi
+
+              IMAGE_DIGEST_REF="$(containerRegistry)/$(imageRepository)@$DIGEST"
+              echo "Built and scanned image: $IMAGE"
+              echo "Immutable image reference: $IMAGE_DIGEST_REF"
+              echo "##vso[task.setvariable variable=imageReference;isOutput=true]$IMAGE_DIGEST_REF"
+            name: publishImage
+            displayName: Build, scan and push container
+
+          - task: Docker@2
+            displayName: Log out of registry
+            condition: always()
+            inputs:
+              command: logout
+              containerRegistry: $(dockerRegistryServiceConnection)

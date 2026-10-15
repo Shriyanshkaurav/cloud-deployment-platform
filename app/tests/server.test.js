@@ -54,6 +54,20 @@ test('GET /ready returns ready', async () => {
   assert.deepEqual(await response.json(), { status: 'ready' });
 });
 
+test('GET /healthz returns healthy', async () => {
+  const response = await fetch(`${baseUrl}/healthz`);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { status: 'healthy' });
+});
+
+test('GET /readyz returns ready', async () => {
+  const response = await fetch(`${baseUrl}/readyz`);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { status: 'ready' });
+});
+
 test('GET /version returns application version information', async () => {
   const response = await fetch(`${baseUrl}/version`);
   const data = await response.json();
@@ -64,4 +78,16 @@ test('GET /version returns application version information', async () => {
     version: '1.1.0',
     environment: 'test'
   });
+});
+
+test('GET /metrics returns Prometheus-compatible metrics', async () => {
+  const response = await fetch(`${baseUrl}/metrics`);
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type'), /text\/plain/);
+  assert.match(body, /# TYPE http_requests_total counter/);
+  assert.match(body, /http_requests_total \d+/);
+  assert.match(body, /# TYPE process_uptime_seconds gauge/);
+  assert.match(body, /process_uptime_seconds \d+\.\d+/);
 });

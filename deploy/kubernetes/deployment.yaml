@@ -19,6 +19,7 @@ spec:
       labels:
         app: deployment-platform-demo
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
         - name: app
           image: deployment-platform-demo:1.1.0

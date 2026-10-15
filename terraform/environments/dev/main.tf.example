@@ -1,0 +1,22 @@
+# Example caller. Rename to main.tf only after configuring your Kubernetes
+# provider and choosing a safe Terraform state backend.
+provider "kubernetes" {
+  config_path = pathexpand("~/.kube/config")
+}
+
+module "app" {
+  source      = "../../modules/app-kubernetes"
+  name        = var.name
+  namespace   = var.namespace
+  image       = var.image
+  app_version = var.app_version
+  environment = var.environment
+  replicas    = var.replicas
+}
+
+variable "name"        { type = string }
+variable "namespace"   { type = string }
+variable "image"       { type = string }
+variable "app_version" { type = string }
+variable "environment" { type = string }
+variable "replicas"    { type = number }
